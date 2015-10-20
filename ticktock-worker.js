@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 onmessage = function (ev) {
-    for ( var i=0 ; i < 2000000 ; i++ )
+    for ( var i=0 ; i < 1000000 ; i++ )
 	postMessage(1);
     postMessage(0);
 }
