@@ -1,0 +1,30 @@
+<div id="scrool"></div>
+<script>
+function fib(n) {
+    if (n < 2)
+	return n;
+    return fib(n-1) + fib(n-2);
+}
+
+function fibloop(n) {
+    for ( var i=0 ; i < n ; i++ )
+	fib(10);
+}
+
+// Warm up
+function test(iter) {
+    fibloop(1000);
+    var then = performance.now();
+    var now;
+    while ((now = performance.now()) == then)
+	;
+    then = now;
+    fibloop(iter);
+    now = performance.now();
+    return now - then;		// ms
+}
+
+var iter = 100000;
+document.getElementById("scrool").innerHTML += test(iter)/iter*1000000 + " ns/invocation";
+</script>
+

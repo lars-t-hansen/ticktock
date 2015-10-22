@@ -1,0 +1,185 @@
+<div id="scrool"></div>
+<script>
+
+function warmup() {
+    for ( var i=0 ; i < 30 ; i++ ) {
+	var then = performance.now();
+	var now;
+	var c = 0;
+	while ((now = performance.now()) == then)
+	    c++;
+	var diff = now - then;
+	document.getElementById("scrool").innerHTML += diff + " " + c + "<br>";
+	then = now;
+    }
+}
+
+const CALIBRATE = 0;
+const MEASURE = 1;
+const SIZE = 32;
+
+var gresult = 0;
+var gsumsum = 0;
+var g_guess = 0;
+
+var g_tick_cache = makeArray(SIZE, 0);
+var g_transition_cache = makeArray(SIZE, 0);
+
+function calibrate(operation, f, hi, lo) {
+    var sumsum = 0;
+    var failed_count = 0;
+    var tick_cache = g_tick_cache;
+    var transition_cache = g_transition_cache;
+    var cache_index = 0;
+    var fresult;
+    var guess = 0;
+    var result = false;
+    var warmup = 10;
+    for ( guess=hi ; guess >= lo ; guess -= 4 ) {
+	var sum = 1.5;
+	var c = guess;
+	var then = performance.now();
+	var now;
+	while ((now = performance.now()) == then)
+	    ;
+
+	// Observed a break in the timer, run the test
+	then = now;
+
+	// Do the operation. Capture the result to avoid optimizing it away.
+	if (operation != MEASURE || !warmup)
+	    fresult = f();
+
+	while (c > 0) {
+	    sum *= sum;		// Avoid optimizing out the loop entirely
+	    c--;
+	}
+	result = (performance.now() != then);
+	if (operation == MEASURE) {
+	    if (warmup--) {
+		guess += 4;
+		continue;
+	    }
+	    break;
+	}
+	tick_cache[cache_index % SIZE] = guess;
+	transition_cache[cache_index % SIZE] = result;
+	cache_index++;
+	failed_count = result ? 0 : failed_count+1;
+	if (failed_count > 10)
+	    break;
+	sumsum += sum;
+	gresult += fresult;
+    }
+
+    /*
+	var s = "";
+	for ( var i=0 ; i < SIZE ; i++ ) {
+	    var k = (cache_index+i) % SIZE;
+	    s += tick_cache[k] + " " + transition_cache[k] + "<BR>";
+	}
+	document.getElementById("scrool").innerHTML += s;
+    */
+
+    gsumsum = sumsum;
+
+    g_guess = guess;
+
+    return operation == MEASURE ? !!result : guess;
+}
+
+/*
+	var cresult = qq;
+	for ( var i=0 ; i < 8 ; i++ )
+	    cresult += Math.sin(cresult);
+*/
+
+function makeArray(n, v) {
+    var a = new Array(n);
+    for ( var i=0 ; i < n ; i++ )
+	a[i] = v;
+    return a;
+}
+
+function fib(n) {
+    if (n < 2)
+	return n;
+    return fib(n-1) + fib(n-2);
+}
+
+function fib1() { return fib(1); }
+function fib3() { return fib(3); }
+function fib4() { return fib(4); }
+function fib6() { return fib(6); }
+function fib7() { return fib(7); }
+function fib10() { return fib(10); }
+
+var fast = fib1;
+var slow = fib10;
+
+// Try to warm up the jitted code
+for ( var i=0 ; i < 100 ; i++ ) {
+    calibrate(CALIBRATE, fast, 8000, 1000);
+    calibrate(CALIBRATE, slow, 8000, 1000);
+}
+
+// Compute plausible ranges
+var fast_hi = 0;
+var fast_lo = 10000;
+var fast_sum = 0;
+var slow_hi = 0;
+var slow_lo = 10000;
+var slow_sum = 0;
+
+for ( var i=0 ; i < 20 ; i++ ) {
+    var f = calibrate(CALIBRATE, fast, 8000, 1000);
+    fast_hi = Math.max(f, fast_hi);
+    fast_lo = Math.min(f, fast_lo);
+    fast_sum += f;
+    var s = calibrate(CALIBRATE, slow, 8000, 1000);
+    slow_hi = Math.max(s, slow_hi);
+    slow_lo = Math.min(s, slow_lo);
+    slow_sum += s;
+}
+
+var fast_mean = Math.round(fast_sum/20);
+var slow_mean = Math.round(slow_sum/20);
+
+document.getElementById("scrool").innerHTML += (fast_lo + " " + fast_hi + " " + fast_mean + "<br>" +
+						slow_lo + " " + slow_hi + " " + slow_mean + "<br>");
+
+var fast_correct = 0;
+var fast_incorrect = 0;
+var slow_correct = 0;
+var slow_incorrect = 0;
+
+// If we run the fast algorithm we should not observe a crossing within fast_hi - k
+// where k is 1/3 the difference between the fast and the slow means.
+//
+// If we run the slow algorithm we should observe a crossing within slow_hi + k.
+
+var k = Math.round((fast_mean - slow_mean) / 3);
+
+document.getElementById("scrool").innerHTML += "k=" + k + "<br>";
+
+for ( var i=0 ; i < 100 ; i++ ) {
+    if (Math.round(Math.random())) {
+	var r = calibrate(MEASURE, fast, fast_hi - k /*fast_mean + k*/, 0);
+	if (r)
+	    fast_incorrect++;
+	else
+	    fast_correct++;
+    }
+    else {
+	var r = calibrate(MEASURE, slow, slow_hi + k, 0);
+	if (r)
+	    slow_correct++;
+	else
+	    slow_incorrect++;
+    }
+}
+
+document.getElementById("scrool").innerHTML += (fast_correct + " " + fast_incorrect + "<br>" +
+						slow_correct + " " + slow_incorrect + "<br>");
+
+</script>
