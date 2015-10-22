@@ -1,4 +1,4 @@
-<div id="scrool"></div>
+<pre><div id="scrool"></div></pre>
 <script>
 
 // Not used currently, just ignore it.
@@ -114,6 +114,8 @@ function fib3() { return fib(3); }
 function fib4() { return fib(4); }
 function fib6() { return fib(6); }
 function fib7() { return fib(7); }
+function fib8() { return fib(8); }
+function fib9() { return fib(9); }
 function fib10() { return fib(10); }
 
 var fast = fib1;
@@ -147,29 +149,25 @@ for ( var i=0 ; i < 20 ; i++ ) {
 var fast_mean = Math.round(fast_sum/20);
 var slow_mean = Math.round(slow_sum/20);
 
-document.getElementById("scrool").innerHTML += (fast_lo + " " + fast_hi + " " + fast_mean + "<br>" +
-						slow_lo + " " + slow_hi + " " + slow_mean + "<br>");
+document.getElementById("scrool").innerHTML += ("Low/hi/mean<br>" +
+						"Fast: " + fast_lo + " " + fast_hi + " " + fast_mean + "<br>" +
+						"Slow: " + slow_lo + " " + slow_hi + " " + slow_mean + "<br><br>");
 
 var fast_correct = 0;
 var fast_incorrect = 0;
 var slow_correct = 0;
 var slow_incorrect = 0;
 
-// If we run the fast algorithm we should not observe a crossing within fast_hi - k
-// where k is 1/3 the difference between the fast and the slow means.
-//
-// If we run the slow algorithm we should observe a crossing within slow_hi + k.
-//
-// If these tests are correct often enough then either test can be used to
-// determine which variant a probe function is.
+// Use slow_hi + k as the cutoff.  k is 1/6 the difference between the
+// fast and the slow means.
 
-var k = Math.round((fast_mean - slow_mean) / 3);
+var k = Math.round((fast_mean - slow_mean) / 6);
 
-document.getElementById("scrool").innerHTML += "k=" + k + "<br>";
+document.getElementById("scrool").innerHTML += "k=" + k + "<br><br>";
 
 for ( var i=0 ; i < 100 ; i++ ) {
     if (Math.round(Math.random())) {
-	var r = calibrate(MEASURE, fast, slow_hi + k /*fast_hi - k*/ /*fast_mean + k*/, 0);
+	var r = calibrate(MEASURE, fast, slow_hi + k, 0);
 	if (r)
 	    fast_incorrect++;
 	else
@@ -184,7 +182,8 @@ for ( var i=0 ; i < 100 ; i++ ) {
     }
 }
 
-document.getElementById("scrool").innerHTML += (fast_correct + " " + fast_incorrect + "<br>" +
-						slow_correct + " " + slow_incorrect + "<br>");
+document.getElementById("scrool").innerHTML += ("Correct/incorrect<br>" +
+						"Fast: " + fast_correct + " " + fast_incorrect + "<br>" +
+						"Slow: " + slow_correct + " " + slow_incorrect + "<br><br>");
 
 </script>
