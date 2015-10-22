@@ -1,6 +1,7 @@
 <div id="scrool"></div>
 <script>
 
+// Not used currently, just ignore it.
 function warmup() {
     for ( var i=0 ; i < 30 ; i++ ) {
 	var then = performance.now();
@@ -16,6 +17,7 @@ function warmup() {
 
 const CALIBRATE = 0;
 const MEASURE = 1;
+
 const SIZE = 32;
 
 var gresult = 0;
@@ -157,6 +159,9 @@ var slow_incorrect = 0;
 // where k is 1/3 the difference between the fast and the slow means.
 //
 // If we run the slow algorithm we should observe a crossing within slow_hi + k.
+//
+// If these tests are correct often enough then either test can be used to
+// determine which variant a probe function is.
 
 var k = Math.round((fast_mean - slow_mean) / 3);
 
@@ -164,7 +169,7 @@ document.getElementById("scrool").innerHTML += "k=" + k + "<br>";
 
 for ( var i=0 ; i < 100 ; i++ ) {
     if (Math.round(Math.random())) {
-	var r = calibrate(MEASURE, fast, fast_hi - k /*fast_mean + k*/, 0);
+	var r = calibrate(MEASURE, fast, slow_hi + k /*fast_hi - k*/ /*fast_mean + k*/, 0);
 	if (r)
 	    fast_incorrect++;
 	else
